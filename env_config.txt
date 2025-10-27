@@ -1,0 +1,13 @@
+# Telegram Bot Configuration
+BOT_TOKEN=8336818565:AAHokdXIit8Bt8FqCVdoj8DT7fJ2ABZS23A
+
+# Group Information (Optional)
+GROUP_CHAT_ID=@BarbwireSmoke
+GROUP_LINK=https://t.me/BarbwireSmoke
+
+# Bot Settings (Optional)
+BOT_NAME=Barbwire Welcome Bot
+BOT_USERNAME=@barbwire_welcome_bot
+
+# Note: Welcome message is now hardcoded in the bot code
+# No need to set WELCOME_MESSAGE in this file
