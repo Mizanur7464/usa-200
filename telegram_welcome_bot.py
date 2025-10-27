@@ -57,6 +57,11 @@ For any questions, reach out to customer service 848-224-3287"""
             MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, self.handle_new_member)
         )
         
+        # Chat member update handler (for join request approvals)
+        self.application.add_handler(
+            MessageHandler(filters.StatusUpdate.CHAT_MEMBER, self.handle_chat_member_update)
+        )
+        
         # Start command handler
         self.application.add_handler(
             CommandHandler("start", self.start_command)
@@ -132,6 +137,56 @@ For any questions, reach out to customer service 848-224-3287"""
         except Exception as e:
             logger.error(f"❌ Error handling new member: {e}")
             logger.error(f"Exception details: {str(e)}")
+    
+    async def handle_chat_member_update(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle chat member updates (join requests, approvals)"""
+        try:
+            # Check if someone was promoted to member (approved join request)
+            new_status = update.chat_member.new_chat_member.status
+            old_status = update.chat_member.old_chat_member.status
+            
+            # When join request is approved (was left/restricted, now member)
+            if old_status in ['left', 'kicked', 'restricted'] and new_status == 'member':
+                user = update.chat_member.new_chat_member.user
+                
+                logger.info(f"Join request approved for {user.first_name} (ID: {user.id})")
+                
+                # Don't send to bot itself
+                try:
+                    bot_info = await self.bot.get_me()
+                    if user.id == bot_info.id:
+                        return
+                except:
+                    pass
+                
+                # Send welcome message privately
+                try:
+                    logger.info(f"Sending welcome message to approved member {user.first_name}")
+                    await context.bot.send_message(
+                        chat_id=user.id,
+                        text=self.welcome_message,
+                        parse_mode='HTML',
+                        disable_web_page_preview=True
+                    )
+                    logger.info(f"✅ Welcome message sent to {user.first_name} after approval")
+                except TelegramError as e:
+                    logger.warning(f"❌ Could not send private message to {user.first_name}: {e}")
+                    
+                    # If private message fails, send to group
+                    try:
+                        logger.info(f"Attempting to send group message for {user.first_name}")
+                        await context.bot.send_message(
+                            chat_id=update.effective_chat.id,
+                            text=f"Welcome {user.first_name}! 🎉\n\n{self.welcome_message}",
+                            parse_mode='HTML',
+                            disable_web_page_preview=True
+                        )
+                        logger.info(f"✅ Welcome message sent to group for {user.first_name}")
+                    except TelegramError as group_error:
+                        logger.error(f"❌ Could not send welcome message to group: {group_error}")
+                    
+        except Exception as e:
+            logger.error(f"Error handling chat member update: {e}")
     
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Start command handler"""
