@@ -9,6 +9,7 @@ import logging
 import os
 from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import ChatMemberHandler
 from telegram.error import TelegramError
 import json
 from datetime import datetime
@@ -59,7 +60,7 @@ For any questions, reach out to customer service 848-224-3287"""
         
         # Chat member update handler (for join request approvals)
         self.application.add_handler(
-            MessageHandler(filters.StatusUpdate.CHAT_MEMBER, self.handle_chat_member_update)
+            ChatMemberHandler(self.handle_chat_member_update)
         )
         
         # Start command handler
@@ -141,13 +142,16 @@ For any questions, reach out to customer service 848-224-3287"""
     async def handle_chat_member_update(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle chat member updates (join requests, approvals)"""
         try:
+            # Get chat member update from context
+            chat_member = update.chat_member
+            
             # Check if someone was promoted to member (approved join request)
-            new_status = update.chat_member.new_chat_member.status
-            old_status = update.chat_member.old_chat_member.status
+            new_status = chat_member.new_chat_member.status
+            old_status = chat_member.old_chat_member.status
             
             # When join request is approved (was left/restricted, now member)
             if old_status in ['left', 'kicked', 'restricted'] and new_status == 'member':
-                user = update.chat_member.new_chat_member.user
+                user = chat_member.new_chat_member.user
                 
                 logger.info(f"Join request approved for {user.first_name} (ID: {user.id})")
                 
@@ -176,7 +180,7 @@ For any questions, reach out to customer service 848-224-3287"""
                     try:
                         logger.info(f"Attempting to send group message for {user.first_name}")
                         await context.bot.send_message(
-                            chat_id=update.effective_chat.id,
+                            chat_id=chat_member.chat.id,
                             text=f"Welcome {user.first_name}! 🎉\n\n{self.welcome_message}",
                             parse_mode='HTML',
                             disable_web_page_preview=True

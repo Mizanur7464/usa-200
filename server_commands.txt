@@ -1,0 +1,24 @@
+# সার্ভারে পুল করার কমান্ড
+
+## ১. সার্ভারে SSH কানেক্ট করুন
+ssh root@your-server-ip
+
+## ২. প্রজেক্ট ফোল্ডারে যান
+cd /root/welcome\ message\ group\ bot
+
+## ৩. Git pull করুন
+git pull origin main
+
+## ৪. যদি conflicts থাকলে
+git stash
+git pull origin main
+git stash pop
+
+## ৫. বট রিস্টার্ট করুন
+systemctl restart barbwire-bot
+
+## ৬. স্ট্যাটাস চেক করুন
+systemctl status barbwire-bot
+
+## ৭. লগ দেখুন
+journalctl -u barbwire-bot -f
