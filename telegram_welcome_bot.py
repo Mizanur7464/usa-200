@@ -9,7 +9,7 @@ import logging
 import os
 from telegram import Update, Bot
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-from telegram.ext import ChatMemberHandler
+from telegram.ext import ChatMemberHandler, ChatJoinRequestHandler
 from telegram.error import TelegramError
 import json
 from datetime import datetime
@@ -65,7 +65,7 @@ For any questions, reach out to customer service 848-224-3287"""
         
         # Chat join request handler (for auto-approving)
         self.application.add_handler(
-            MessageHandler(filters.StatusUpdate.CHAT_JOIN_REQUEST, self.handle_join_request)
+            ChatJoinRequestHandler(self.handle_join_request)
         )
         
         # Start command handler
