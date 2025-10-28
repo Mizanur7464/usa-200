@@ -63,6 +63,11 @@ For any questions, reach out to customer service 848-224-3287"""
             ChatMemberHandler(self.handle_chat_member_update)
         )
         
+        # Chat join request handler (for auto-approving)
+        self.application.add_handler(
+            MessageHandler(filters.StatusUpdate.CHAT_JOIN_REQUEST, self.handle_join_request)
+        )
+        
         # Start command handler
         self.application.add_handler(
             CommandHandler("start", self.start_command)
@@ -191,6 +196,40 @@ For any questions, reach out to customer service 848-224-3287"""
                     
         except Exception as e:
             logger.error(f"Error handling chat member update: {e}")
+    
+    async def handle_join_request(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle join requests and auto-approve them"""
+        try:
+            chat_join_request = update.chat_join_request
+            user = chat_join_request.from_user
+            
+            logger.info(f"Join request received from {user.first_name} (ID: {user.id})")
+            
+            # Auto-approve the join request
+            try:
+                await context.bot.approve_chat_join_request(
+                    chat_id=chat_join_request.chat.id,
+                    user_id=user.id
+                )
+                logger.info(f"✅ Auto-approved join request from {user.first_name}")
+                
+                # Send welcome message after approval
+                try:
+                    await context.bot.send_message(
+                        chat_id=user.id,
+                        text=self.welcome_message,
+                        parse_mode='HTML',
+                        disable_web_page_preview=True
+                    )
+                    logger.info(f"✅ Welcome message sent to {user.first_name}")
+                except TelegramError as e:
+                    logger.warning(f"❌ Could not send private message to {user.first_name}: {e}")
+                    
+            except TelegramError as e:
+                logger.error(f"❌ Could not approve join request for {user.first_name}: {e}")
+                
+        except Exception as e:
+            logger.error(f"Error handling join request: {e}")
     
     async def start_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Start command handler"""
